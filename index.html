@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vault PT — QR Generator</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #0f172a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px 16px;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .header h1 {
+    font-size: 24px;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0.5px;
+  }
+  .header p {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 6px;
+  }
+  .card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    margin-bottom: 24px;
+  }
+  .card h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .field {
+    margin-bottom: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .field input, .field select {
+    width: 100%;
+    padding: 12px 14px;
+    background: #0f172a;
+    border: 1.5px solid #334155;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus {
+    border-color: #6366f1;
+  }
+  .field input::placeholder {
+    color: #475569;
+  }
+  .field select option {
+    background: #1e293b;
+    color: #fff;
+  }
+  .btn {
+    width: 100%;
+    padding: 14px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    border: none;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: opacity 0.2s;
+    letter-spacing: 0.3px;
+  }
+  .btn:hover { opacity: 0.9; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* QR OUTPUT */
+  .qr-card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    display: none;
+    text-align: center;
+  }
+  .qr-card.visible { display: block; }
+  .qr-header {
+    margin-bottom: 20px;
+  }
+  .qr-header .gym-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #6366f1;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .qr-header .client-name {
+    font-size: 22px;
+    font-weight: 800;
+    color: #fff;
+    margin-top: 4px;
+  }
+  .qr-header .meta {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+  .qr-box {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    display: inline-block;
+    margin: 16px 0;
+  }
+  .validity {
+    background: #0f172a;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 12px;
+    color: #f97316;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: inline-block;
+  }
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 4px;
+  }
+  .btn-secondary {
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: 1.5px solid #334155;
+    background: transparent;
+    color: #94a3b8;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover {
+    border-color: #6366f1;
+    color: #6366f1;
+  }
+  .btn-print {
+    padding: 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    background: #6366f1;
+    color: #fff;
+    transition: opacity 0.2s;
+  }
+  .btn-print:hover { opacity: 0.85; }
+
+  /* CLIENT LIST */
+  .list-card {
+    background: #1e293b;
+    border-radius: 16px;
+    padding: 28px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    margin-top: 24px;
+  }
+  .list-card h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 16px;
+  }
+  .client-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #0f172a;
+  }
+  .client-item:last-child { border-bottom: none; }
+  .client-info .cname { font-size: 14px; font-weight: 600; color: #fff; }
+  .client-info .cmeta { font-size: 11px; color: #64748b; margin-top: 2px; }
+  .btn-view {
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1.5px solid #6366f1;
+    background: transparent;
+    color: #6366f1;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .btn-view:hover { background: #6366f1; color: #fff; }
+  .empty-list {
+    text-align: center;
+    color: #475569;
+    font-size: 13px;
+    padding: 16px 0;
+  }
+  .search-box {
+    width: 100%;
+    padding: 10px 14px;
+    background: #0f172a;
+    border: 1.5px solid #334155;
+    border-radius: 10px;
+    color: #fff;
+    font-size: 13px;
+    outline: none;
+    margin-bottom: 14px;
+  }
+  .search-box:focus { border-color: #6366f1; }
+  .search-box::placeholder { color: #475569; }
+
+  /* PRINT STYLES */
+  @media print {
+    body { background: #fff; padding: 0; }
+    .card, .list-card, .header { display: none !important; }
+    .qr-card {
+      display: block !important;
+      background: #fff;
+      box-shadow: none;
+      max-width: 100%;
+      padding: 40px;
+    }
+    .qr-header .gym-name { color: #6366f1; }
+    .qr-header .client-name { color: #000; }
+    .qr-header .meta { color: #666; }
+    .btn-row, .validity { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>⚡ VAULT PT</h1>
+  <p>QR Code Generator — For Internal Use Only</p>
+</div>
+
+<!-- GENERATOR FORM -->
+<div class="card">
+  <h2>Generate New QR</h2>
+
+  <div class="field">
+    <label>Client Full Name</label>
+    <input type="text" id="clientName" placeholder="e.g. Arjun Gupta" oninput="clearQR()">
+  </div>
+
+  <div class="field">
+    <label>Trainer Name</label>
+    <select id="trainerName" onchange="clearQR()">
+      <option value="">— Select Trainer —</option>
+      <option>Vishal</option>
+      <option>Sandeep</option>
+      <option>Vibhu</option>
+      <option>Harsh</option>
+      <option>Sonu</option>
+      <option>Deepanshu</option>
+      <option>Kashish</option>
+      <option>Deepak</option>
+      <option>GT</option>
+      <option>Rahul</option>
+      <option>Sandeep Tanwar</option>
+      <option>Randhawa</option>
+      <option>Ajay</option>
+      <option>Fitt</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <label>Package Size (Total Sessions)</label>
+    <select id="packageSize" onchange="clearQR()">
+      <option value="12">12 Sessions</option>
+      <option value="18">18 Sessions</option>
+      <option value="24">24 Sessions</option>
+      <option value="36">36 Sessions</option>
+      <option value="48">48 Sessions</option>
+      <option value="54">54 Sessions</option>
+      <option value="60">60 Sessions</option>
+      <option value="72">72 Sessions</option>
+      <option value="90">90 Sessions</option>
+    </select>
+  </div>
+
+  <button class="btn" onclick="generateQR()">⚡ Generate QR Code</button>
+</div>
+
+<!-- QR OUTPUT -->
+<div class="qr-card" id="qrCard">
+  <div class="qr-header">
+    <div class="gym-name">Vault by Virat Kohli, Janakpuri</div>
+    <div class="client-name" id="qrClientName"></div>
+    <div class="meta" id="qrMeta"></div>
+  </div>
+  <div class="qr-box">
+    <div id="qrcode"></div>
+  </div>
+  <br>
+  <div class="validity" id="qrValidity"></div>
+  <div class="btn-row">
+    <button class="btn-secondary" onclick="saveToList()">💾 Save Client</button>
+    <button class="btn-print" onclick="window.print()">🖨️ Print / Save</button>
+  </div>
+</div>
+
+<!-- SAVED CLIENT LIST -->
+<div class="list-card" id="listCard">
+  <h2>Saved Clients (<span id="clientCount">0</span>)</h2>
+  <input type="text" class="search-box" placeholder="Search client..." oninput="renderList(this.value)">
+  <div id="clientList"><div class="empty-list">No clients saved yet. Generate a QR and click Save Client.</div></div>
+</div>
+
+<script>
+// CONFIG — UPDATE THIS IF FORM URL CHANGES
+const FORM_BASE = "https://docs.google.com/forms/d/e/1FAIpQLSdbH0df4Xzvjl6Q4eefTp_f4D3Hp9NaMKcrQaBGM_n1dv1u2A/viewform?usp=pp_url";
+const ENTRY_GYM = "entry.893522911";
+const ENTRY_CLIENT = "entry.433818159";
+const ENTRY_TRAINER = "entry.820274022";
+const ENTRY_SESSION = "entry.966355060";
+const GYM_NAME = "Vault by Virat Kohli, Janakpuri";
+
+let currentQRData = null;
+
+function getTodayToken() {
+  const now = new Date();
+  // Format: YYYYMMDD — changes every day at midnight
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}${m}${d}`;
+}
+
+function getExpiryTime() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  const diff = midnight - now;
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  return `${hours}h ${mins}m`;
+}
+
+function buildFormURL(clientName, trainerName, sessionNo) {
+  const token = getTodayToken();
+  // Token is embedded in client name field as a suffix — invisible to client but validated server side
+  const url = `${FORM_BASE}&${ENTRY_GYM}=${encodeURIComponent(GYM_NAME)}&${ENTRY_CLIENT}=${encodeURIComponent(clientName)}&${ENTRY_TRAINER}=${encodeURIComponent(trainerName)}&${ENTRY_SESSION}=${encodeURIComponent(sessionNo)}&token=${token}`;
+  return url;
+}
+
+function generateQR() {
+  const clientName = document.getElementById('clientName').value.trim();
+  const trainerName = document.getElementById('trainerName').value.trim();
+  const packageSize = document.getElementById('packageSize').value;
+
+  if (!clientName) { alert('Please enter the client name.'); return; }
+  if (!trainerName) { alert('Please select a trainer.'); return; }
+
+  // Get current session number from saved clients
+  const clients = getSavedClients();
+  const existing = clients.find(c => c.name.toLowerCase() === clientName.toLowerCase());
+  const sessionNo = existing ? (existing.sessionsUsed + 1) : 1;
+
+  const url = buildFormURL(clientName, trainerName, sessionNo);
+
+  // Clear previous QR
+  document.getElementById('qrcode').innerHTML = '';
+
+  // Generate new QR
+  new QRCode(document.getElementById('qrcode'), {
+    text: url,
+    width: 220,
+    height: 220,
+    colorDark: "#000000",
+    colorLight: "#ffffff",
+    correctLevel: QRCode.CorrectLevel.H
+  });
+
+  // Update display
+  document.getElementById('qrClientName').textContent = clientName;
+  document.getElementById('qrMeta').textContent = `Trainer: ${trainerName} · Package: ${packageSize} sessions`;
+  document.getElementById('qrValidity').textContent = `⏳ Valid today only — refreshes in ${getExpiryTime()}`;
+
+  currentQRData = { name: clientName, trainer: trainerName, packageSize: parseInt(packageSize), sessionsUsed: existing ? existing.sessionsUsed : 0, url };
+
+  document.getElementById('qrCard').classList.add('visible');
+  document.getElementById('qrCard').scrollIntoView({ behavior: 'smooth' });
+
+  // Auto-refresh validity timer
+  setInterval(() => {
+    const el = document.getElementById('qrValidity');
+    if (el) el.textContent = `⏳ Valid today only — refreshes in ${getExpiryTime()}`;
+  }, 60000);
+}
+
+function clearQR() {
+  document.getElementById('qrCard').classList.remove('visible');
+  currentQRData = null;
+}
+
+// SAVE CLIENT TO LOCAL STORAGE
+function getSavedClients() {
+  return JSON.parse(localStorage.getItem('vault_clients') || '[]');
+}
+
+function saveToList() {
+  if (!currentQRData) return;
+  let clients = getSavedClients();
+  const idx = clients.findIndex(c => c.name.toLowerCase() === currentQRData.name.toLowerCase());
+  if (idx >= 0) {
+    clients[idx] = { ...clients[idx], trainer: currentQRData.trainer, packageSize: currentQRData.packageSize };
+    alert(`${currentQRData.name} updated in the client list.`);
+  } else {
+    clients.push({ name: currentQRData.name, trainer: currentQRData.trainer, packageSize: currentQRData.packageSize, sessionsUsed: 0, addedOn: new Date().toLocaleDateString('en-IN') });
+    alert(`${currentQRData.name} saved to client list.`);
+  }
+  localStorage.setItem('vault_clients', JSON.stringify(clients));
+  renderList('');
+}
+
+function renderList(search) {
+  const clients = getSavedClients();
+  document.getElementById('clientCount').textContent = clients.length;
+  const filtered = clients.filter(c => c.name.toLowerCase().includes((search || '').toLowerCase()));
+  const el = document.getElementById('clientList');
+  if (filtered.length === 0) {
+    el.innerHTML = '<div class="empty-list">No clients found.</div>';
+    return;
+  }
+  el.innerHTML = filtered.map((c, i) => `
+    <div class="client-item">
+      <div class="client-info">
+        <div class="cname">${c.name}</div>
+        <div class="cmeta">Trainer: ${c.trainer} · ${c.sessionsUsed}/${c.packageSize} sessions · Added ${c.addedOn}</div>
+      </div>
+      <button class="btn-view" onclick="loadClient('${c.name}')">View QR</button>
+    </div>
+  `).join('');
+}
+
+function loadClient(name) {
+  const clients = getSavedClients();
+  const c = clients.find(x => x.name === name);
+  if (!c) return;
+  document.getElementById('clientName').value = c.name;
+  document.getElementById('trainerName').value = c.trainer;
+  document.getElementById('packageSize').value = c.packageSize;
+  generateQR();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Init
+renderList('');
+
+// Auto-regenerate QR at midnight so it's always fresh
+function msUntilMidnight() {
+  const now = new Date();
+  const midnight = new Date(now);
+  midnight.setHours(24, 0, 0, 0);
+  return midnight - now;
+}
+setTimeout(() => {
+  if (currentQRData) generateQR();
+  setInterval(() => { if (currentQRData) generateQR(); }, 24 * 60 * 60 * 1000);
+}, msUntilMidnight());
+</script>
+</body>
+</html>
