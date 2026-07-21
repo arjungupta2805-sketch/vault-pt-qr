@@ -279,38 +279,12 @@
 
   <div class="field">
     <label>Trainer Name</label>
-    <select id="trainerName" onchange="clearQR()">
-      <option value="">— Select Trainer —</option>
-      <option>Vishal</option>
-      <option>Sandeep</option>
-      <option>Vibhu</option>
-      <option>Harsh</option>
-      <option>Sonu</option>
-      <option>Deepanshu</option>
-      <option>Kashish</option>
-      <option>Deepak</option>
-      <option>GT</option>
-      <option>Rahul</option>
-      <option>Sandeep Tanwar</option>
-      <option>Randhawa</option>
-      <option>Ajay</option>
-      <option>Fitt</option>
-    </select>
+    <input type="text" id="trainerName" placeholder="e.g. Vishal" oninput="clearQR()">
   </div>
 
   <div class="field">
     <label>Package Size (Total Sessions)</label>
-    <select id="packageSize" onchange="clearQR()">
-      <option value="12">12 Sessions</option>
-      <option value="18">18 Sessions</option>
-      <option value="24">24 Sessions</option>
-      <option value="36">36 Sessions</option>
-      <option value="48">48 Sessions</option>
-      <option value="54">54 Sessions</option>
-      <option value="60">60 Sessions</option>
-      <option value="72">72 Sessions</option>
-      <option value="90">90 Sessions</option>
-    </select>
+    <input type="number" id="packageSize" placeholder="e.g. 12" min="1" oninput="clearQR()">
   </div>
 
   <button class="btn" onclick="generateQR()">⚡ Generate QR Code</button>
@@ -384,7 +358,8 @@ function generateQR() {
   const packageSize = document.getElementById('packageSize').value;
 
   if (!clientName) { alert('Please enter the client name.'); return; }
-  if (!trainerName) { alert('Please select a trainer.'); return; }
+  if (!trainerName) { alert('Please enter the trainer name.'); return; }
+  if (!packageSize || packageSize < 1) { alert('Please enter a valid package size.'); return; }
 
   // Get current session number from saved clients
   const clients = getSavedClients();
